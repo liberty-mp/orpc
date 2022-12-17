@@ -1,10 +1,17 @@
-import Socket from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
 export class SocketIOClient {
-  socket: SocketIOClient.Socket;
+  socket: Socket;
 
   constructor(url: string = 'https://localhost') {
-    this.socket = Socket(url);
+    this.socket = io(url, {
+      reconnection: false,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 2500,
+      reconnectionDelayMax: 5000,
+      autoConnect: true,
+      forceNew: true    
+    })
   }
 
   get connected(): boolean {
@@ -18,24 +25,24 @@ export class SocketIOClient {
   close(): void {
     this.socket.close();
   }
-
-  on(event: string, fn: Function): SocketIOClient.Emitter {
+  
+  on(event: string, fn: (...args: any[]) => void) {
     return this.socket.on(event, fn);
   }
 
-  once(event: string, fn: Function): SocketIOClient.Emitter {
+  once(event: string, fn: (...args: any[]) => void) {
     return this.socket.once(event, fn);
   }
 
-  off(event: string, fn?: Function): SocketIOClient.Emitter {
+  off(event: string, fn?: (...args: any[]) => void) {
     return this.socket.off(event, fn);
   }
 
-  removeAllListeners(): SocketIOClient.Emitter {
+  removeAllListeners() {
     return this.socket.removeAllListeners();
   }
 
-  emit(event: string, ...args: any[]): SocketIOClient.Emitter {
+  emit(event: string, ...args: any[]) {
     return this.socket.emit(event, ...args);
   }
 

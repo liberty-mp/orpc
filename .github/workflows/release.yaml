@@ -1,0 +1,40 @@
+name: NPM Publish
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2.4.0
+
+      - name: Use Node.js v16
+        uses: actions/setup-node@17f8bd926464a1afa4c6a11669539e9c1ba77048 # tag=v3
+        with:
+          node-version: 16
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install Dependencies
+        run: |
+          npm install
+
+      - name: Build Library
+        run: npm run build
+        
+      - name: Publish
+        run: |
+          npm set registry "https://registry.npmjs.org"
+          npm set //registry.npmjs.org/:_authToken $NODE_AUTH_TOKEN
+
+          cd dist
+          
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}

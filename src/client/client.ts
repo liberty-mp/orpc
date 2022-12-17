@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { nanoid } from 'nanoid'
 
 import {
   CallData,
@@ -9,7 +9,7 @@ import {
   ServicePrototype,
 } from '../shared';
 
-import {SocketIOClient} from './socket-io-client';
+import { SocketIOClient } from './socket-io-client';
 
 type ServiceMethod<T = any> = (...args: any[]) => T;
 
@@ -36,21 +36,21 @@ export interface CallInfo {
 }
 
 export class Client {
-  socketIO: SocketIOClient;
-
+  private readonly socketIO: SocketIOClient;
   private callInfoSet = new Map<string, CallInfo>();
+  private reconnectTimeout: NodeJS.Timeout | null = null;
 
-  constructor(url?: string) {
+  public constructor(url?: string) {
     this.socketIO = new SocketIOClient(url);
 
     this.initializeSocketIO();
   }
 
-  open(): void {
+  public open(): void {
     this.socketIO.open();
   }
 
-  close(): void {
+  public close(): void {
     this.socketIO.close();
   }
 
@@ -68,7 +68,7 @@ export class Client {
     options?: CallOptions,
   ): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      let callUUID = uuid();
+      let callUUID = nanoid();
 
       let callData: CallData =
         typeof method === 'object'
@@ -91,16 +91,40 @@ export class Client {
   }
 
   private initializeSocketIO(): void {
+    this.socketIO.on('connect', () => {
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
+      }
+    })
+    
+    this.socketIO.on('connect_error', () => {
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+      }
+      
+      this.rejectCalls()
+      
+      this.reconnectTimeout = setTimeout(() => {
+        this.open()
+      }, 5_000)
+    })
+    
+    this.socketIO.on('disconnect', () => {
+      this.rejectCalls()
+      this.open()
+    })
+    
     this.socketIO.on('respond', (response: RespondData) => {
-      let {callUUID, code, body} = response;
+      let { callUUID, code, body } = response;
 
       let callInfo = this.callInfoSet.get(callUUID);
 
       if (!callInfo) {
-        throw new Error(`Uncaught response '${callUUID}'`);
+        return
       }
 
-      let {resolve, reject} = callInfo;
+      let { resolve, reject } = callInfo;
 
       switch (code) {
         case RespondCode.failure:
@@ -112,12 +136,20 @@ export class Client {
       }
     });
   }
+  
+  private rejectCalls() {
+    for (let callInfo of this.callInfoSet.values()) {
+      callInfo.reject(new Error('Connection closed'));
+    }
+    
+    this.callInfoSet.clear();
+  }
 }
 
 export function createClient<Schema extends RPCSchema>(
   url?: string,
 ): RPCClient<Schema> {
-  let object = {$portal: new Client(url)};
+  let object = { $portal: new Client(url) };
 
   let handler: ProxyHandler<typeof object> = {
     get(target, service: string): any {
