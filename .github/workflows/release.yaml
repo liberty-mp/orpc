@@ -33,8 +33,6 @@ jobs:
           npm set registry "https://registry.npmjs.org"
           npm set //registry.npmjs.org/:_authToken $NODE_AUTH_TOKEN
 
-          cd dist
-          
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
