@@ -1,3 +1,4 @@
+import { red, yellow } from 'colorette';
 import { nanoid } from 'nanoid'
 
 import {
@@ -96,6 +97,8 @@ export class Client {
         clearTimeout(this.reconnectTimeout);
         this.reconnectTimeout = null;
       }
+      
+      console.log(`${yellow('[SOCKET]')} Connection established.`)
     })
     
     this.socketIO.on('connect_error', () => {
@@ -105,6 +108,8 @@ export class Client {
       
       this.rejectCalls()
       
+      console.log(`${red('[SOCKET]')} Connection error. Reconnecting...`)
+      
       this.reconnectTimeout = setTimeout(() => {
         this.open()
       }, 5_000)
@@ -112,6 +117,7 @@ export class Client {
     
     this.socketIO.on('disconnect', () => {
       this.rejectCalls()
+      console.log(`${red('[SOCKET]')} Disconnected. Reconnecting...`)
       this.open()
     })
     
