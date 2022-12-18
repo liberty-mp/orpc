@@ -92,6 +92,8 @@ export class Client {
   }
 
   private initializeSocketIO(): void {
+    let reconnectingLog = false
+    
     this.socketIO.on('connect', () => {
       if (this.reconnectTimeout) {
         clearTimeout(this.reconnectTimeout);
@@ -99,6 +101,7 @@ export class Client {
       }
       
       console.log(`${yellow('[SOCKET]')} Connection established.`)
+      reconnectingLog = true
     })
     
     this.socketIO.on('connect_error', () => {
@@ -108,7 +111,10 @@ export class Client {
       
       this.rejectCalls()
       
-      console.log(`${red('[SOCKET]')} Connection error. Reconnecting...`)
+      if (!reconnectingLog) {
+        console.log(`${red('[SOCKET]')} Connection error. Reconnecting...`)
+        reconnectingLog = true
+      }
       
       this.reconnectTimeout = setTimeout(() => {
         this.open()
