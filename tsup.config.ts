@@ -4,7 +4,7 @@ export default defineConfig({
 	clean: true,
 	dts: true,
 	entry: ['src/**/*.ts'],
-	format: ['cjs'],
+	format: ['cjs', 'esm'],
 	minify: false,
 	skipNodeModulesBundle: true,
 	sourcemap: true,

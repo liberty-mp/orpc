@@ -1,6 +1,6 @@
 {
   "name": "@libertymp/orpc",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -25,11 +25,13 @@
     "type-check": "tsc -p src --noEmit"
   },
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "!*.js.map"
-  ],
+	"module": "dist/index.mjs",
+	"types": "dist/index.d.ts",
+	"exports": {
+		"import": "./dist/index.mjs",
+		"require": "./dist/index.js",
+		"types": "./dist/index.d.ts"
+	},
   "devDependencies": {
     "prettier": "^2.8.1",
     "tsup": "^6.5.0",
